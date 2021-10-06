@@ -1,0 +1,51 @@
+version: 2.1
+jobs:
+  build:
+    working_directory: ~/trial-sbt
+    docker:
+      - image: openjdk:11
+        auth:
+          username: mydockerhub-user
+          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+    environment:
+      SBT_VERSION: 1.4.9  # latest available for debian on 2021-10-06
+    steps:
+      - run: echo 'export ARTIFACT_BUILD=$CIRCLE_PROJECT_REPONAME-$CIRCLE_BUILD_NUM.zip' >> $BASH_ENV
+      - run:
+          name: Test
+          command: |
+            echo $BASH_ENV
+            cat $BASH_ENV
+      - run:
+          name: Get sbt binary
+          command: |
+            apt update && apt install -y curl
+            echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | tee /etc/apt/sources.list.d/sbt.list
+            echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | tee /etc/apt/sources.list.d/sbt_old.list
+            curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | apt-key add
+            apt-get update
+            apt-get install sbt=$SBT_VERSION
+            # apt-get install -y python3-pip git # to upload jar
+            # pip3 install awscli
+            apt-get clean && apt-get autoclean
+      - checkout
+      - restore_cache:
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          key: sbt-cache
+      - run:
+          name: Compile trial-sbt package
+          command: sbt clean update package
+      - store_artifacts: # for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
+          path: target/universal/samplescala.zip
+          destination: samplescala
+      - save_cache:
+          key: sbt-cache
+          paths:
+            - "~/.ivy2/cache"
+            - "~/.sbt"
+            - "~/.m2"
+      - deploy:
+          command: |
+            ls -l
+            echo "target/universal/samplescala.zip $CIRCLE_ARTIFACTS/$ARTIFACT_BUILD"
+            echo "aws s3 cp $CIRCLE_ARTIFACTS/$ARTIFACT_BUILD s3://some-bucket"
