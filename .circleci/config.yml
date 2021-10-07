@@ -8,7 +8,7 @@ jobs:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
     environment:
-      SBT_VERSION: 1.4.9  # latest available for debian on 2021-10-06
+      SBT_VERSION: 1.5.5  # latest available for debian on 2021-10-06
     steps:
       - run: echo 'export ARTIFACT_BUILD=$CIRCLE_PROJECT_REPONAME-$CIRCLE_BUILD_NUM.zip' >> $BASH_ENV
       - run:
