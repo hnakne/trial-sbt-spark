@@ -20,7 +20,7 @@ lazy val root = (project in file(".")).settings(
   ),
   s3credentials := DefaultAWSCredentialsProviderChain.getInstance(),
   s3region := com.amazonaws.services.s3.model.Region.US_Standard,
-  publish := false, // publish disabled
+  publish / skip := true, // publish disabled
   publishTo := Some(
     s3resolver.value(
       "Testing",
